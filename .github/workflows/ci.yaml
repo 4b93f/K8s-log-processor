@@ -48,6 +48,7 @@ jobs:
           context: ./app/api
           push: true
           tags: ghcr.io/${{ github.actor }}/k8s-prod-api:latest
+          platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -101,6 +102,7 @@ jobs:
           context: ./app/worker
           push: true
           tags: ghcr.io/${{ github.actor }}/k8s-prod-worker:latest
+          platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
