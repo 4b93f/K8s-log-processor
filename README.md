@@ -101,96 +101,44 @@ Kubernetes deployment is handled by ArgoCD via [k8s-prod-config](https://github.
 | [Minikube](https://minikube.sigs.k8s.io/) | Local Kubernetes cluster |
 | [kubectl](https://kubernetes.io/docs/tasks/tools/) | Kubernetes CLI |
 | [Helm](https://helm.sh/docs/intro/install/) | Chart management |
-| [ArgoCD CLI](https://argo-cd.readthedocs.io/en/stable/cli_installation/) | ArgoCD CLI |
-| [LocalStack](https://docs.localstack.cloud/getting-started/installation/) | Local AWS (S3 + SQS) |
+| [LocalStack](https://docs.localstack.cloud/getting-started/installation/) | Local AWS (S3 + SQS) — needs an auth token from [app.localstack.cloud](https://app.localstack.cloud) |
 | [Terraform](https://developer.hashicorp.com/terraform/install) | Provision AWS resources |
 
-### 1. Start Minikube
+### Start LocalStack first
 
 ```bash
-minikube start
-```
-
-### 2. Install ArgoCD
-
-```bash
-kubectl create namespace argocd
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=120s
-```
-
-### 3. Clone the config repo and deploy monitoring first
-
-> **Important:** deploy monitoring before the app — the app chart includes a ServiceMonitor which requires Prometheus CRDs to exist first.
-
-```bash
-git clone https://github.com/4b93f-organization/k8s-prod-config
-cd k8s-prod-config
-
-kubectl apply -f argocd/monitor.yaml
-```
-
-Wait for kube-prometheus-stack to finish syncing (installs the CRDs):
-
-```bash
-kubectl get pods -n monitoring --watch
-# wait until prometheus-operator pod is Running
-```
-
-### 4. Deploy the app
-
-```bash
-kubectl apply -f argocd/application.yaml
-```
-
-### 5. Start LocalStack and provision AWS resources
-
-```bash
-# Start LocalStack (requires auth token from app.localstack.cloud)
 localstack start
-
-# In the k8s-prod repo
-cd terraform/environments/dev
-cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars — add your LocalStack auth token
-
-terraform init
-terraform apply
 ```
 
-### 6. Access services
+### Then run in order
 
 ```bash
-# Get Minikube IP
-minikube ip
-
-# API (NodePort — check values.yaml for port)
-curl http://$(minikube ip):30080/health
-
-# Grafana
-open http://$(minikube ip):30300
-# default login: admin / prom-operator
-
-# ArgoCD UI
-kubectl port-forward svc/argocd-server -n argocd 8080:443
-open https://localhost:8080
-# password: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+make setup       # start Minikube + install ArgoCD
+make monitoring  # deploy Prometheus + Grafana (waits for CRDs)
+make deploy      # deploy the app via ArgoCD
+make infra       # provision S3 + SQS on LocalStack
 ```
 
-### 7. Test the API
+> `make infra` will create `terraform.tfvars` from the example on first run and ask you to add your LocalStack auth token.
+
+### Test
 
 ```bash
-API=http://$(minikube ip):30080
+make test        # health check + upload test log + fetch result
+```
 
-# Upload a log file
-curl -X POST $API/upload -F "file=@log/test.log"
-# → {"job_id": "...", "status": "queued"}
+### Access services
 
-# Upload an image (OCR)
-curl -X POST $API/upload -F "file=@screenshot.png"
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| API | `http://$(minikube ip):30080` | — |
+| Grafana | `http://$(minikube ip):30300` | admin / prom-operator |
+| ArgoCD | `kubectl port-forward svc/argocd-server -n argocd 8080:443` | password from `make setup` output |
 
-# Check result
-curl $API/jobs/<job_id>
+### Teardown
+
+```bash
+make reset       # delete Minikube + stop LocalStack + clear Terraform state
 ```
 
 ## API Reference
