@@ -1,6 +1,20 @@
 # k8s-prod
 
-Production-ready log processing system running on Kubernetes. Upload log files or images — the worker parses them, extracts HTTP metrics, and stores results in S3. Full observability via Prometheus + Grafana.
+Production-ready log processing system on Kubernetes. Upload log files or images — the worker parses them, extracts HTTP metrics, and stores results in S3. Full observability via Prometheus + Grafana.
+
+## Screenshots
+
+### ArgoCD — apps synced and healthy
+![ArgoCD](docs/screenshots/argocd.png)
+
+### Grafana — worker metrics dashboard
+![Grafana dashboard](docs/screenshots/grafana-dashboard.png)
+
+### Pods running
+![kubectl get pods](docs/screenshots/pods.png)
+
+### S3 bucket contents
+![S3 bucket](docs/screenshots/s3.png)
 
 ## Architecture
 
@@ -33,8 +47,6 @@ User → POST /upload → API → S3 (raw file) + SQS (job message)
 
 ## S3 Layout
 
-![S3 bucket contents](docs/screenshots/s3.png)
-
 ```
 log-processing/
   uploads/{job_id}/{filename}        # raw upload (log file or image)
@@ -52,27 +64,26 @@ log-processing/
 }
 ```
 
-## Screenshots
-
-### ArgoCD — apps synced and healthy
-![ArgoCD](docs/screenshots/argocd.png)
-
-### Grafana — worker metrics dashboard
-![Grafana dashboard](docs/screenshots/grafana-dashboard.png)
-
-### Pods running
-![kubectl get pods](docs/screenshots/pods.png)
-
 ## Features
 
-- **FastAPI** — upload endpoint, job status polling, health check
-- **Worker** — SQS consumer with log parsing and OCR support (Tesseract)
-- **OCR** — send images of logs, worker extracts text and parses them
-- **Prometheus metrics** — messages processed/failed, OCR stats, processing duration
-- **Terraform** — provisions S3 + SQS on LocalStack
+- **Async job processing** — upload returns a `job_id` immediately; poll for result via SQS + S3
+- **OCR support** — send images of logs; worker extracts text with Tesseract and parses them
+- **Prometheus metrics** — messages processed/failed, OCR stats, processing duration, HTTP error counts
+- **GitOps with ArgoCD** — push to [k8s-prod-config](https://github.com/4b93f-organization/k8s-prod-config), cluster updates automatically
 - **Multi-arch Docker builds** — `linux/amd64` + `linux/arm64`
 - **Non-root containers** — runs as `appuser` (uid 1001)
-- **Snyk scanning** — container vulnerability scanning in CI
+- **Snyk scanning** — dependency and container image scanning in CI
+- **One-command setup** — `make setup && make monitoring && make infra && make deploy`
+
+## CI/CD
+
+GitHub Actions on every push to `main` (when `app/` files change):
+
+1. Build + push multi-arch Docker images to GHCR
+2. Snyk dependency scan
+3. Snyk container image scan
+
+Kubernetes deployment is handled by ArgoCD via [k8s-prod-config](https://github.com/4b93f-organization/k8s-prod-config) — push to that repo, cluster updates automatically.
 
 ## Repo Structure
 
@@ -99,16 +110,6 @@ Kubernetes config lives in a separate repo: [k8s-prod-config](https://github.com
 | `worker_ocr_processed_total` | Images processed via OCR |
 | `worker_ocr_failed_total` | OCR failures |
 | `worker_processing_duration_seconds` | Processing time histogram |
-
-## CI/CD
-
-GitHub Actions on every push to `main` (when `app/` files change):
-
-1. Build + push multi-arch Docker images to GHCR
-2. Snyk dependency scan
-3. Snyk container image scan
-
-Kubernetes deployment is handled by ArgoCD via [k8s-prod-config](https://github.com/4b93f-organization/k8s-prod-config) — push to that repo, cluster updates automatically.
 
 ## Local Setup
 
@@ -152,7 +153,7 @@ make test        # health check + upload test log + fetch result
 | Service | URL | Credentials |
 |---------|-----|-------------|
 | API | `http://$(minikube ip):$(kubectl get svc api -n app -o jsonpath='{.spec.ports[0].nodePort}')` | — |
-| Grafana | `http://$(minikube ip):30300` | admin / prom-operator |
+| Grafana | `http://$(minikube ip):30300` | admin / value from `.env` |
 | ArgoCD | `kubectl port-forward svc/argocd-server -n argocd 8080:443` | password from `make setup` output |
 
 ### Teardown
