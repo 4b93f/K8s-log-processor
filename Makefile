@@ -36,7 +36,7 @@ monitoring:
 		--from-literal=admin-user=admin \
 		--from-literal=admin-password=$$GRAFANA_PASSWORD \
 		-n monitoring --dry-run=client -o yaml | kubectl apply -f -
-	curl -sL https://raw.githubusercontent.com/4b93f-organization/K8s-prod-config/main/argocd/monitor.yaml | kubectl apply -f -
+	curl -sL https://raw.githubusercontent.com/4b93f-organization/K8s-log-processor-config/main/argocd/monitor.yaml | kubectl apply -f -
 	@echo "Waiting for Prometheus operator CRDs..."
 	@until kubectl get crd prometheuses.monitoring.coreos.com >/dev/null 2>&1; do \
 		echo "  CRDs not ready yet, retrying in 10s..."; sleep 10; \
@@ -45,7 +45,7 @@ monitoring:
 
 ## 3. Deploy the app
 deploy:
-	curl -sL https://raw.githubusercontent.com/4b93f-organization/K8s-prod-config/main/argocd/application.yaml | kubectl apply -f -
+	curl -sL https://raw.githubusercontent.com/4b93f-organization/K8s-log-processor-config/main/argocd/application.yaml | kubectl apply -f -
 	@echo "App syncing via ArgoCD. Watch: kubectl get pods -n app --watch"
 
 ## 4. Provision LocalStack resources
