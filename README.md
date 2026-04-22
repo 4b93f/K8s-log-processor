@@ -88,13 +88,21 @@ Kubernetes deployment is handled by ArgoCD via [k8s-prod-config](https://github.
 ## Repo Structure
 
 ```
-app/
-  api/          # FastAPI service
-  worker/       # SQS consumer + OCR + Prometheus metrics
-terraform/
-  modules/aws/  # S3 and SQS modules
-  environments/dev/
-.github/workflows/ci.yaml  # Build, push, scan
+k8s-prod/                          # this repo
+├── app/
+│   ├── api/                       # FastAPI — upload, poll, health
+│   └── worker/                    # SQS consumer, log parser, OCR
+├── terraform/
+│   ├── modules/aws/               # S3 + SQS modules
+│   └── environments/dev/          # LocalStack config
+├── .github/workflows/ci.yaml      # build, push, Snyk scan
+├── Makefile                       # one-command setup
+└── docs/screenshots/
+
+k8s-prod-config/                   # separate GitOps repo
+├── argocd/                        # ArgoCD Application manifests
+├── chart/                         # Helm chart (API + Worker)
+└── grafana/                       # dashboard JSON
 ```
 
 Kubernetes config lives in a separate repo: [k8s-prod-config](https://github.com/4b93f-organization/k8s-prod-config)
