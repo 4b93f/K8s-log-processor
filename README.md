@@ -31,6 +31,27 @@ User → POST /upload → API → S3 (raw file) + SQS (job message)
    └────────────────────────┘
 ```
 
+## S3 Layout
+
+![S3 bucket contents](docs/screenshots/s3.png)
+
+```
+log-processing/
+  uploads/{job_id}/{filename}        # raw upload (log file or image)
+  results/{job_id}/summary.json      # parsed result written by worker
+```
+
+`summary.json` example:
+```json
+{
+  "total_requests": 842,
+  "error_count": 17,
+  "source": "text",
+  "job_id": "abc123",
+  "status": "done"
+}
+```
+
 ## Screenshots
 
 ### ArgoCD — apps synced and healthy
@@ -41,9 +62,6 @@ User → POST /upload → API → S3 (raw file) + SQS (job message)
 
 ### Pods running
 ![kubectl get pods](docs/screenshots/pods.png)
-
-### API in action
-![API upload + job result](docs/screenshots/api.png)
 
 ## Features
 
