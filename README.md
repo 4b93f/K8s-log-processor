@@ -74,7 +74,7 @@ log-processing/
 - **Async job processing** — upload returns a `job_id` immediately; poll for result via SQS + S3
 - **OCR support** — send images of logs; worker extracts text with Tesseract and parses them
 - **Prometheus metrics** — messages processed/failed, OCR stats, processing duration, HTTP error counts
-- **GitOps with ArgoCD** — push to [K8s-log-processor-config](https://github.com/4b93f-organization/K8s-log-processor-config), cluster updates automatically
+- **GitOps with ArgoCD** — push to [K8s-log-processor-config](https://github.com/4b93f/K8s-log-processor-config), cluster updates automatically
 - **Multi-arch Docker builds** — `linux/amd64` + `linux/arm64`
 - **Snyk scanning** — dependency and container image scanning in CI
 - **One-command setup** — `make setup && make monitoring && make infra && make deploy`
@@ -91,7 +91,7 @@ GitHub Actions on every push to `main` (when `app/` files change):
 2. Snyk dependency scan
 3. Snyk container image scan
 
-Kubernetes deployment is handled by ArgoCD via [K8s-log-processor-config](https://github.com/4b93f-organization/K8s-log-processor-config) — push to that repo, cluster updates automatically.
+Kubernetes deployment is handled by ArgoCD via [K8s-log-processor-config](https://github.com/4b93f/K8s-log-processor-config) — push to that repo, cluster updates automatically.
 
 ## Repo Structure
 
@@ -113,7 +113,7 @@ K8s-log-processor-config/                   # separate GitOps repo
 └── grafana/                       # dashboard JSON
 ```
 
-Kubernetes config lives in a separate repo: [K8s-log-processor-config](https://github.com/4b93f-organization/K8s-log-processor-config)
+Kubernetes config lives in a separate repo: [K8s-log-processor-config](https://github.com/4b93f/K8s-log-processor-config)
 
 ## Worker Metrics
 
